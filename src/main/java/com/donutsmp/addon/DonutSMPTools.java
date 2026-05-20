@@ -15,7 +15,7 @@ import com.donutsmp.addon.modules.main.HideScoreboard;
 import com.donutsmp.addon.modules.main.NoBlockInteract;
 import com.donutsmp.addon.modules.main.Relog;
 import com.donutsmp.addon.modules.esp.LightESP;
-import com.donutsmp.addon.modules.other.RegionMap;
+import com.donutsmp.addon.modules.main.RegionMap;
 import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
