@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "donutsmp-tools",
+  "version": "${version}",
+  "name": "DonutSMP Tools",
+  "description": "Tools and utilities for DonutSMP Base Hunting.",
+  "authors": [
+    "DonutSMP Dev"
+  ],
+  "contact": {
+    "repo": "https://github.com/DonutSMP/donutsmp-tools"
+  },
+  "icon": "assets/donutsmp/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "meteor": [
+      "com.donutsmp.addon.DonutSMPTools"
+    ]
+  },
+  "mixins": [
+    "donutsmp-tools.mixins.json"
+  ],
+  "custom": {
+    "meteor-client:color": "225,25,25"
+  },
+  "depends": {
+    "java": ">=21",
+    "minecraft": ["${mc_version}"],
+    "meteor-client": "*"
+  }
+}
