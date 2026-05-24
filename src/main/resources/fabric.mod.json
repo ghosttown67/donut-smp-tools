@@ -5,7 +5,7 @@
   "name": "DonutSMP Tools",
   "description": "Tools and utilities for DonutSMP Base Hunting.",
   "authors": [
-    "DonutSMP Dev"
+    "critical"
   ],
   "contact": {
     "repo": "https://github.com/DonutSMP/donutsmp-tools"

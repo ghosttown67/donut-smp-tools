@@ -11,12 +11,10 @@ import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.state.property.Properties;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
@@ -27,54 +25,54 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class RotatedDeepslateESP extends Module {
+public class DeepslateESP extends Module {
     private final SettingGroup sgGeneral = settings.createGroup("General");
 
     private final Setting<SettingColor> deepslateColor = sgGeneral.add(new ColorSetting.Builder()
         .name("esp-color")
-        .description("Rotated deepslate box color")
-        .defaultValue(new SettingColor(255, 0, 255, 100))
+        .description("Deepslate box color")
+        .defaultValue(new SettingColor(0, 200, 255, 100))
         .build());
 
-    private final Setting<ShapeMode> deepslateShapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
+    private final Setting<ShapeMode> shapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
         .name("shape-mode")
-        .description("Rotated deepslate box render mode")
+        .description("Deepslate box render mode")
         .defaultValue(ShapeMode.Both)
         .build());
 
     private final Setting<Boolean> tracers = sgGeneral.add(new BoolSetting.Builder()
         .name("tracers")
-        .description("Draw tracers to rotated deepslate blocks")
+        .description("Draw tracers to deepslate blocks")
         .defaultValue(false)
         .build());
 
     private final Setting<SettingColor> tracerColor = sgGeneral.add(new ColorSetting.Builder()
         .name("tracer-color")
-        .description("Rotated deepslate tracer color")
-        .defaultValue(new SettingColor(255, 0, 255, 200))
+        .description("Deepslate tracer color")
+        .defaultValue(new SettingColor(0, 200, 255, 200))
         .visible(tracers::get)
         .build());
 
-    private final Setting<Boolean> deepslateChat = sgGeneral.add(new BoolSetting.Builder()
+    private final Setting<Boolean> chatFeedback = sgGeneral.add(new BoolSetting.Builder()
         .name("chat-feedback")
-        .description("Announce rotated deepslate in chat")
+        .description("Announce deepslate in chat")
         .defaultValue(true)
         .build());
 
-    private final SettingGroup sgRange = settings.createGroup("Range");
+    private final SettingGroup sgFiltering = settings.createGroup("Filtering");
 
-    private final Setting<Integer> minY = sgRange.add(new IntSetting.Builder()
+    private final Setting<Integer> minY = sgFiltering.add(new IntSetting.Builder()
         .name("min-y")
-        .description("Minimum Y level to scan for rotated deepslate")
-        .defaultValue(-64)
+        .description("Minimum Y level to scan for deepslate")
+        .defaultValue(8)
         .min(-64)
         .max(128)
         .sliderRange(-64, 128)
         .build());
 
-    private final Setting<Integer> maxY = sgRange.add(new IntSetting.Builder()
+    private final Setting<Integer> maxY = sgFiltering.add(new IntSetting.Builder()
         .name("max-y")
-        .description("Maximum Y level to scan for rotated deepslate")
+        .description("Maximum Y level to scan for deepslate")
         .defaultValue(128)
         .min(-64)
         .max(320)
@@ -106,11 +104,11 @@ public class RotatedDeepslateESP extends Module {
         .visible(useThreading::get)
         .build());
 
-    private final Set<BlockPos> rotatedDeepslatePositions = ConcurrentHashMap.newKeySet();
+    private final Set<BlockPos> deepslatePositions = ConcurrentHashMap.newKeySet();
     private ExecutorService threadPool;
 
-    public RotatedDeepslateESP() {
-        super(DonutSMPTools.BASE_HUNTING_CATEGORY, "RotatedDeepslateESP", "ESP for rotated deepslate blocks with threading and tracer support.");
+    public DeepslateESP() {
+        super(DonutSMPTools.BASE_HUNTING_CATEGORY, "DeepslateESP", "ESP for deepslate blocks with threading and tracer support.");
     }
 
     @Override
@@ -121,7 +119,7 @@ public class RotatedDeepslateESP extends Module {
             threadPool = Executors.newFixedThreadPool(threadPoolSize.get());
         }
 
-        rotatedDeepslatePositions.clear();
+        deepslatePositions.clear();
 
         if (useThreading.get()) {
             for (Chunk chunk : Utils.chunks()) {
@@ -141,7 +139,7 @@ public class RotatedDeepslateESP extends Module {
         if (threadPool != null && !threadPool.isShutdown()) {
             threadPool.shutdownNow();
         }
-        rotatedDeepslatePositions.clear();
+        deepslatePositions.clear();
     }
 
     @EventHandler
@@ -158,13 +156,13 @@ public class RotatedDeepslateESP extends Module {
         BlockPos pos = event.pos;
         BlockState state = event.newState;
 
-        if (isRotatedDeepslate(state)) {
-            rotatedDeepslatePositions.add(pos);
-            if (deepslateChat.get() && !limitChatSpam.get()) {
-                info("Found rotated deepslate at " + pos);
+        if (isDeepslateInRange(state, pos.getY())) {
+            deepslatePositions.add(pos);
+            if (chatFeedback.get()) {
+                info("Found deepslate at " + pos);
             }
         } else {
-            rotatedDeepslatePositions.remove(pos);
+            deepslatePositions.remove(pos);
         }
     }
 
@@ -175,40 +173,28 @@ public class RotatedDeepslateESP extends Module {
         int yMin = Math.max(chunk.getBottomY(), minY.get());
         int yMax = Math.min(chunk.getBottomY() + chunk.getHeight(), maxY.get());
 
-        Set<BlockPos> foundRotated = new HashSet<>();
+        Set<BlockPos> foundDeepslate = new HashSet<>();
         for (int x = xStart; x < xStart + 16; x++) {
             for (int z = zStart; z < zStart + 16; z++) {
                 for (int y = yMin; y < yMax; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState state = chunk.getBlockState(pos);
 
-                    if (isRotatedDeepslate(state)) {
-                        rotatedDeepslatePositions.add(pos);
-                        foundRotated.add(pos);
+                    if (isDeepslateInRange(state, y)) {
+                        deepslatePositions.add(pos);
+                        foundDeepslate.add(pos);
                     }
                 }
             }
         }
 
-        if (!foundRotated.isEmpty() && deepslateChat.get()) {
-            info("Found " + foundRotated.size() + " rotated deepslate blocks in chunk " + cpos);
+        if (!foundDeepslate.isEmpty() && chatFeedback.get()) {
+            info("Found " + foundDeepslate.size() + " deepslate blocks in chunk " + cpos);
         }
     }
 
-    private boolean isRotatedDeepslate(BlockState state) {
-        if (!isDeepslateVariant(state)) return false;
-        if (!state.contains(Properties.AXIS)) return false;
-        Direction.Axis axis = state.get(Properties.AXIS);
-        return axis != Direction.Axis.Y;
-    }
-
-    private boolean isDeepslateVariant(BlockState state) {
-        return state.getBlock() == Blocks.DEEPSLATE ||
-               state.getBlock() == Blocks.COBBLED_DEEPSLATE ||
-               state.getBlock() == Blocks.POLISHED_DEEPSLATE ||
-               state.getBlock() == Blocks.DEEPSLATE_BRICKS ||
-               state.getBlock() == Blocks.DEEPSLATE_TILES ||
-               state.getBlock() == Blocks.CHISELED_DEEPSLATE;
+    private boolean isDeepslateInRange(BlockState state, int y) {
+        return state.getBlock() == Blocks.DEEPSLATE && y >= minY.get() && y <= maxY.get();
     }
 
     @EventHandler
@@ -216,11 +202,11 @@ public class RotatedDeepslateESP extends Module {
         Color side = new Color(deepslateColor.get());
         Color outline = new Color(deepslateColor.get());
 
-        for (BlockPos pos : rotatedDeepslatePositions) {
+        for (BlockPos pos : deepslatePositions) {
             double dist = mc.player.getPos().distanceTo(Vec3d.ofCenter(pos));
             if (dist > 150) continue;
 
-            event.renderer.box(new net.minecraft.util.math.Box(pos), side, outline, deepslateShapeMode.get(), 0);
+            event.renderer.box(new net.minecraft.util.math.Box(pos), side, outline, shapeMode.get(), 0);
 
             if (tracers.get()) {
                 Vec3d playerPos = mc.gameRenderer.getCamera().getPos();

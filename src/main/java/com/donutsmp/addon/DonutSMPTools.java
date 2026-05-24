@@ -3,17 +3,22 @@ package com.donutsmp.addon;
 
 import com.donutsmp.addon.hud.HudExample;
 import com.donutsmp.addon.modules.esp.BeeNestESP;
-import com.donutsmp.addon.modules.esp.VineESP;
-import com.donutsmp.addon.modules.esp.WanderingESP;
 import com.donutsmp.addon.modules.esp.SweetBerryESP;
-import com.donutsmp.addon.modules.esp.OneByOneHoles;
 import com.donutsmp.addon.modules.esp.FilledHolesESP;
-import com.donutsmp.addon.modules.esp.RotatedDeepslateESP;
 import com.donutsmp.addon.modules.esp.HoleTunnelStairsESP;
 import com.donutsmp.addon.modules.esp.CoveredHole;
+import com.donutsmp.addon.modules.esp.VineESP;
+import com.donutsmp.addon.modules.esp.KelpESP;
+import com.donutsmp.addon.modules.esp.ClusterFinder;
+import com.donutsmp.addon.modules.esp.DeepslateESP;
+import com.donutsmp.addon.modules.esp.RotatedDeepslateESP;
+import com.donutsmp.addon.modules.esp.DripstoneESP;
+import com.donutsmp.addon.modules.esp.OneByOneHolesESP;
+import com.donutsmp.addon.modules.esp.ChunkFinder;
 import com.donutsmp.addon.modules.main.HideScoreboard;
 import com.donutsmp.addon.modules.main.NoBlockInteract;
 import com.donutsmp.addon.modules.main.Relog;
+import com.donutsmp.addon.modules.main.StashFinder;
 import com.donutsmp.addon.modules.esp.LightESP;
 import com.donutsmp.addon.modules.main.RegionMap;
 import com.mojang.logging.LogUtils;
@@ -39,17 +44,20 @@ public class DonutSMPTools extends MeteorAddon {
 
 
         Modules.get().add(new BeeNestESP());
-        Modules.get().add(new VineESP());
-        Modules.get().add(new WanderingESP());
         Modules.get().add(new SweetBerryESP());
-        Modules.get().add(new OneByOneHoles());
         Modules.get().add(new FilledHolesESP());
-
-        // New ESP modules
-        Modules.get().add(new RotatedDeepslateESP());
         Modules.get().add(new HoleTunnelStairsESP());
         Modules.get().add(new CoveredHole());
         Modules.get().add(new LightESP());
+        Modules.get().add(new VineESP());
+        Modules.get().add(new KelpESP());
+        Modules.get().add(new ClusterFinder());
+        Modules.get().add(new DeepslateESP());
+        Modules.get().add(new RotatedDeepslateESP());
+        Modules.get().add(new DripstoneESP());
+        Modules.get().add(new OneByOneHolesESP());
+        Modules.get().add(new ChunkFinder());
+        Modules.get().add(new StashFinder());
 
 
         // Main category modules
@@ -57,6 +65,7 @@ public class DonutSMPTools extends MeteorAddon {
         Modules.get().add(new NoBlockInteract());
         Modules.get().add(new Relog());
         Modules.get().add(new RegionMap());
+
 
         LOG.info("Initializing DonutSMP Tools");
 

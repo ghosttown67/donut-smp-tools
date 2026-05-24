@@ -30,6 +30,8 @@ public class VineESP extends Module {
     private final SettingGroup sgRange = settings.createGroup("Range");
     private final SettingGroup sgThreading = settings.createGroup("Threading");
 
+    private final Setting<Boolean> notifications = sgRender.add(new BoolSetting.Builder().name("notifications").description("Show chat feedback.").defaultValue(true).build());
+
     private final Setting<SettingColor> espColor = sgRender.add(new ColorSetting.Builder()
         .name("ESP Color")
         .description("Color for the ESP boxes")
@@ -76,6 +78,7 @@ public class VineESP extends Module {
         .build()
     );
 
+
     private final Setting<Integer> minY = sgRange.add(new IntSetting.Builder()
         .name("Min Y")
         .description("Minimum Y level to scan for vines")
@@ -95,6 +98,7 @@ public class VineESP extends Module {
         .sliderRange(-64, 320)
         .build()
     );
+
 
     private final Setting<Boolean> useThreading = sgThreading.add(new BoolSetting.Builder()
         .name("Enable Threading")
@@ -123,19 +127,23 @@ public class VineESP extends Module {
     );
 
     private final Set<BlockPos> groundedVines = ConcurrentHashMap.newKeySet();
+
     private ExecutorService threadPool;
 
     public VineESP() {
-        super(DonutSMPTools.BASE_HUNTING_CATEGORY, "Vine ESP", "ESP for vines that touch the ground.");
+        super(DonutSMPTools.BASE_HUNTING_CATEGORY, "vine-esp", "ESP for vines that touch the ground.");
     }
 
     @Override
     public void onActivate() {
         if (mc.world == null) return;
+
         if (useThreading.get()) {
             threadPool = Executors.newFixedThreadPool(threadPoolSize.get());
         }
+
         groundedVines.clear();
+
         if (useThreading.get()) {
             for (Chunk chunk : Utils.chunks()) {
                 if (chunk instanceof WorldChunk worldChunk) {
@@ -157,6 +165,7 @@ public class VineESP extends Module {
             threadPool.shutdown();
             threadPool = null;
         }
+
         groundedVines.clear();
     }
 
@@ -173,17 +182,20 @@ public class VineESP extends Module {
     private void onBlockUpdate(BlockUpdateEvent event) {
         BlockPos pos = event.pos;
         BlockState state = event.newState;
+
         Runnable updateTask = () -> {
             boolean isGrounded = isGroundedVine(state, pos);
+
             if (isGrounded) {
                 boolean wasAdded = groundedVines.add(pos);
                 if (wasAdded && chatFeedback.get() && (!useThreading.get() || !limitChatSpam.get())) {
-                    info("Found vine at %s", pos.toShortString());
+                    if (notifications.get()) info("§aVineESP§f: Found vine at §a%s", pos.toShortString());
                 }
             } else {
                 groundedVines.remove(pos);
             }
         };
+
         if (useThreading.get() && threadPool != null && !threadPool.isShutdown()) {
             threadPool.submit(updateTask);
         } else {
@@ -197,12 +209,15 @@ public class VineESP extends Module {
         int zStart = cpos.getStartZ();
         int yMin = Math.max(chunk.getBottomY(), minY.get());
         int yMax = Math.min(chunk.getBottomY() + chunk.getHeight(), maxY.get());
+
         Set<BlockPos> chunkVines = new HashSet<>();
         int foundCount = 0;
+
         for (int x = xStart; x < xStart + 16; x++) {
             for (int z = zStart; z < zStart + 16; z++) {
                 for (int y = yMin; y < yMax; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
+                    BlockState state = chunk.getBlockState(pos);
                     if (isGroundedVineChunk(chunk, pos)) {
                         chunkVines.add(pos);
                         foundCount++;
@@ -210,25 +225,28 @@ public class VineESP extends Module {
                 }
             }
         }
+
         groundedVines.removeIf(pos -> {
             ChunkPos blockChunk = new ChunkPos(pos);
             return blockChunk.equals(cpos) && !chunkVines.contains(pos);
         });
+
         int newVines = 0;
         for (BlockPos pos : chunkVines) {
             if (groundedVines.add(pos)) {
                 newVines++;
             }
         }
+
         if (chatFeedback.get() && foundCount > 0) {
             if (useThreading.get() && limitChatSpam.get()) {
                 if (newVines > 0) {
-                    info("Chunk %s,%s: %d new vines found", cpos.x, cpos.z, newVines);
+                    if (notifications.get()) info("§aVineESP§f: Chunk %s,%s: §a%d new vines found", cpos.x, cpos.z, newVines);
                 }
             } else {
                 for (BlockPos pos : chunkVines) {
                     if (!groundedVines.contains(pos)) {
-                        info("Found vine at %s", pos.toShortString());
+                        if (notifications.get()) info("§aVineESP§f: Found vine at §a%s", pos.toShortString());
                     }
                 }
             }
@@ -236,72 +254,104 @@ public class VineESP extends Module {
     }
 
     private boolean isGroundedVine(BlockState state, BlockPos pos) {
-        if (!state.isOf(Blocks.VINE)) return false;
-        if (pos.getY() < minY.get() || pos.getY() > maxY.get()) return false;
+        if (!state.isOf(Blocks.VINE)) {
+            return false;
+        }
+
+        if (pos.getY() < minY.get() || pos.getY() > maxY.get()) {
+            return false;
+        }
+
         BlockPos below = pos.down();
-        if (mc.world == null) return false;
+        if (mc.world == null) {
+            return false;
+        }
+
         BlockState belowState = mc.world.getBlockState(below);
+
         if (!belowState.isAir() && belowState.isSolidBlock(mc.world, below) && !belowState.isOf(Blocks.VINE)) {
             return getVineLength(pos) >= minVineLength.get();
         }
+
         return false;
     }
 
     private boolean isGroundedVineChunk(WorldChunk chunk, BlockPos pos) {
-        if (!chunk.getBlockState(pos).isOf(Blocks.VINE)) return false;
-        if (pos.getY() < minY.get() || pos.getY() > maxY.get()) return false;
+        if (!chunk.getBlockState(pos).isOf(Blocks.VINE)) {
+            return false;
+        }
+
+        if (pos.getY() < minY.get() || pos.getY() > maxY.get()) {
+            return false;
+        }
+
         BlockPos below = pos.down();
         BlockState belowState = chunk.getBlockState(below);
+
         if (!belowState.isAir() && belowState.isSolidBlock(mc.world, below) && !belowState.isOf(Blocks.VINE)) {
             return getVineLengthChunk(chunk, pos) >= minVineLength.get();
         }
+
         return false;
     }
 
     private int getVineLength(BlockPos start) {
         int length = 1;
+
         for (BlockPos current = start.up(); mc.world != null && mc.world.getBlockState(current).isOf(Blocks.VINE); current = current.up()) {
             length++;
         }
+
         return length;
     }
 
     private int getVineLengthChunk(WorldChunk chunk, BlockPos start) {
         int length = 1;
+
         for (BlockPos current = start.up(); chunk.getBlockState(current).isOf(Blocks.VINE); current = current.up()) {
             length++;
         }
+
         return length;
     }
 
     @EventHandler
     private void onRender(Render3DEvent event) {
         if (mc.player == null) return;
+
         Vec3d playerPos = mc.player.getLerpedPos(event.tickDelta);
         Color sideColor = new Color(espColor.get());
         Color lineColor = new Color(espColor.get());
         Color tracerColorValue = new Color(tracerColor.get());
+
         for (BlockPos pos : groundedVines) {
             event.renderer.box(pos, sideColor, lineColor, shapeMode.get(), 0);
+
             if (showTracers.get()) {
-                Vec3d blockCenter = Vec3d.ofCenter(pos);
-                Vec3d startPos;
-                if (mc.options.getPerspective().isFirstPerson()) {
-                    Vec3d lookDirection = mc.player.getRotationVector();
-                    startPos = new Vec3d(
-                        playerPos.x + lookDirection.x * 0.5,
-                        playerPos.y + mc.player.getEyeHeight(mc.player.getPose()) + lookDirection.y * 0.5,
-                        playerPos.z + lookDirection.z * 0.5
-                    );
-                } else {
-                    startPos = new Vec3d(
-                        playerPos.x,
-                        playerPos.y + mc.player.getEyeHeight(mc.player.getPose()),
-                        playerPos.z
-                    );
+                double distance = mc.player.getPos().distanceTo(Vec3d.ofCenter(pos));
+                int renderDistance = mc.options.getViewDistance().getValue() * 16;
+                if (distance <= renderDistance) {
+                    Vec3d blockCenter = Vec3d.ofCenter(pos);
+
+                    Vec3d startPos;
+                    if (mc.options.getPerspective().isFirstPerson()) {
+                        Vec3d lookDirection = mc.player.getRotationVector();
+                        startPos = new Vec3d(
+                            playerPos.x + lookDirection.x * 0.5,
+                            playerPos.y + mc.player.getEyeHeight(mc.player.getPose()) + lookDirection.y * 0.5,
+                            playerPos.z + lookDirection.z * 0.5
+                        );
+                    } else {
+                        startPos = new Vec3d(
+                            playerPos.x,
+                            playerPos.y + mc.player.getEyeHeight(mc.player.getPose()),
+                            playerPos.z
+                        );
+                    }
+
+                    event.renderer.line(startPos.x, startPos.y, startPos.z,
+                        blockCenter.x, blockCenter.y, blockCenter.z, tracerColorValue);
                 }
-                event.renderer.line(startPos.x, startPos.y, startPos.z,
-                    blockCenter.x, blockCenter.y, blockCenter.z, tracerColorValue);
             }
         }
     }

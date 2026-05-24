@@ -120,6 +120,22 @@ public class FilledHolesESP extends Module {
         .defaultValue(true)
         .build());
 
+    private final Setting<Boolean> ignoreChunksWithHoles = sgDetection.add(new BoolSetting.Builder()
+        .name("ignore-chunks-with-holes")
+        .description("Ignore chunks if a hole is found within the specified distance.")
+        .defaultValue(false)
+        .build());
+
+    private final Setting<Integer> holeCheckDistance = sgDetection.add(new IntSetting.Builder()
+        .name("hole-check-distance")
+        .description("Distance (in blocks) to check for holes around detected chunks.")
+        .defaultValue(16)
+        .min(8)
+        .max(64)
+        .sliderRange(8, 64)
+        .visible(ignoreChunksWithHoles::get)
+        .build());
+
     // Advanced Settings
     private final Setting<Boolean> tracers = sgAdvanced.add(new BoolSetting.Builder()
         .name("tracers")
@@ -391,22 +407,45 @@ public class FilledHolesESP extends Module {
             detectedChunks.remove(cpos);
         }
 
-        // Chat notifications
+        // Check for holes in the chunk if ignore-holes setting is enabled
+        if (ignoreChunksWithHoles.get() && isHoleNearChunk(cpos, holeCheckDistance.get())) {
+            // Skip this chunk due to holes nearby
+            return;
+        }
+
+        // Chat notifications with block type
         if (chatNotifications.get() && !chunkDetections.isEmpty()) {
+            String blockType = "Unknown";
+            if (!chunkDetections.isEmpty()) {
+                BlockPos sample = chunkDetections.iterator().next();
+                Block block = mc.world.getBlockState(sample).getBlock();
+                String blockName = Registries.BLOCK.getId(block).getPath();
+                // Convert snake_case to Title Case
+                String[] parts = blockName.split("_");
+                StringBuilder titleCase = new StringBuilder();
+                for (String part : parts) {
+                    if (titleCase.length() > 0) titleCase.append(" ");
+                    titleCase.append(part.substring(0, 1).toUpperCase()).append(part.substring(1));
+                }
+                blockType = titleCase.toString();
+            }
+
             if (useThreading.get() && limitChatSpam.get()) {
                 if (newDetections > 0) {
                     final int finalNewDetections = newDetections;
+                    final String finalBlockType = blockType;
                     mc.execute(() -> {
                         if (mc.player != null) {
-                            mc.player.sendMessage(Text.of("Filled holes: " + finalNewDetections + " blocks detected in chunk " + cpos.x + "," + cpos.z), false);
+                            mc.player.sendMessage(Text.of("Filled holes: " + finalNewDetections + " " + finalBlockType + " blocks in chunk " + cpos.x + "," + cpos.z), false);
                         }
                     });
                 }
             } else {
                 final int finalDetections = chunkDetections.size();
+                final String finalBlockType = blockType;
                 mc.execute(() -> {
                     if (mc.player != null) {
-                        mc.player.sendMessage(Text.of("Filled holes: " + finalDetections + " blocks detected in chunk " + cpos.x + "," + cpos.z), false);
+                        mc.player.sendMessage(Text.of("Filled holes: " + finalDetections + " " + finalBlockType + " blocks in chunk " + cpos.x + "," + cpos.z), false);
                     }
                 });
             }
@@ -495,6 +534,95 @@ public class FilledHolesESP extends Module {
         }
 
         return height;
+    }
+
+    private boolean isHoleNearChunk(ChunkPos chunkPos, int maxDistance) {
+        if (mc.world == null) {
+            return false;
+        }
+
+        int centerX = chunkPos.getStartX() + 8;
+        int centerZ = chunkPos.getStartZ() + 8;
+
+        // Search area around the chunk
+        for (int x = centerX - maxDistance; x <= centerX + maxDistance; x++) {
+            for (int z = centerZ - maxDistance; z <= centerZ + maxDistance; z++) {
+                for (int y = Math.max(mc.world.getBottomY(), minYLevel.get()); y <= Math.min(mc.world.getTopYInclusive(), maxYLevel.get()); y++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (isValidHoleSection(pos)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isValidHoleSection(BlockPos pos) {
+        if (mc.world == null) {
+            return false;
+        }
+
+        // Check for 1x1 hole
+        if (isPassableBlock(pos) &&
+            !isPassableBlock(pos.north()) &&
+            !isPassableBlock(pos.south()) &&
+            !isPassableBlock(pos.east()) &&
+            !isPassableBlock(pos.west())) {
+            return true;
+        }
+
+        // Check for 1x3 hole in X direction - check all 3 potential starting positions
+        for (int offset = 0; offset < 3; offset++) {
+            BlockPos start = pos.west(offset);
+            if (isPassableBlock(start) &&
+                isPassableBlock(start.east()) &&
+                isPassableBlock(start.east(2)) &&
+                !isPassableBlock(start.north()) &&
+                !isPassableBlock(start.south()) &&
+                !isPassableBlock(start.west()) &&
+                !isPassableBlock(start.east(3)) &&
+                !isPassableBlock(start.east().north()) &&
+                !isPassableBlock(start.east().south()) &&
+                !isPassableBlock(start.east(2).north()) &&
+                !isPassableBlock(start.east(2).south())) {
+                return true;
+            }
+        }
+
+        // Check for 1x3 hole in Z direction - check all 3 potential starting positions
+        for (int offset = 0; offset < 3; offset++) {
+            BlockPos start = pos.north(offset);
+            if (isPassableBlock(start) &&
+                isPassableBlock(start.south()) &&
+                isPassableBlock(start.south(2)) &&
+                !isPassableBlock(start.east()) &&
+                !isPassableBlock(start.west()) &&
+                !isPassableBlock(start.north()) &&
+                !isPassableBlock(start.south(3)) &&
+                !isPassableBlock(start.south().east()) &&
+                !isPassableBlock(start.south().west()) &&
+                !isPassableBlock(start.south(2).east()) &&
+                !isPassableBlock(start.south(2).west())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isPassableBlock(BlockPos pos) {
+        if (mc.world == null) {
+            return false;
+        }
+
+        BlockState state = mc.world.getBlockState(pos);
+        if (state.isAir()) {
+            return true;
+        }
+
+        return state.getCollisionShape(mc.world, pos).isEmpty();
     }
 
 private boolean isAirBlock(Block block) {

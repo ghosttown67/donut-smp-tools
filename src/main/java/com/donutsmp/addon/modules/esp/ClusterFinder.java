@@ -13,10 +13,8 @@ import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
@@ -27,37 +25,63 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class RotatedDeepslateESP extends Module {
+public class ClusterFinder extends Module {
     private final SettingGroup sgGeneral = settings.createGroup("General");
 
-    private final Setting<SettingColor> deepslateColor = sgGeneral.add(new ColorSetting.Builder()
+    private final Setting<SettingColor> clusterColor = sgGeneral.add(new ColorSetting.Builder()
         .name("esp-color")
-        .description("Rotated deepslate box color")
-        .defaultValue(new SettingColor(255, 0, 255, 100))
+        .description("Amethyst cluster box color")
+        .defaultValue(new SettingColor(147, 0, 211, 100))
         .build());
 
-    private final Setting<ShapeMode> deepslateShapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
+    private final Setting<ShapeMode> clusterShapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
         .name("shape-mode")
-        .description("Rotated deepslate box render mode")
+        .description("Amethyst cluster box render mode")
         .defaultValue(ShapeMode.Both)
         .build());
 
     private final Setting<Boolean> tracers = sgGeneral.add(new BoolSetting.Builder()
         .name("tracers")
-        .description("Draw tracers to rotated deepslate blocks")
+        .description("Draw tracers to amethyst clusters")
         .defaultValue(false)
         .build());
 
     private final Setting<SettingColor> tracerColor = sgGeneral.add(new ColorSetting.Builder()
         .name("tracer-color")
-        .description("Rotated deepslate tracer color")
-        .defaultValue(new SettingColor(255, 0, 255, 200))
+        .description("Amethyst cluster tracer color")
+        .defaultValue(new SettingColor(147, 0, 211, 200))
         .visible(tracers::get)
         .build());
 
-    private final Setting<Boolean> deepslateChat = sgGeneral.add(new BoolSetting.Builder()
+    private final Setting<Boolean> clusterChat = sgGeneral.add(new BoolSetting.Builder()
         .name("chat-feedback")
-        .description("Announce rotated deepslate in chat")
+        .description("Announce amethyst clusters in chat")
+        .defaultValue(true)
+        .build());
+
+    private final SettingGroup sgFiltering = settings.createGroup("Cluster Types");
+
+    private final Setting<Boolean> includeSmallBuds = sgFiltering.add(new BoolSetting.Builder()
+        .name("small-buds")
+        .description("Include small amethyst buds")
+        .defaultValue(true)
+        .build());
+
+    private final Setting<Boolean> includeMediumBuds = sgFiltering.add(new BoolSetting.Builder()
+        .name("medium-buds")
+        .description("Include medium amethyst buds")
+        .defaultValue(true)
+        .build());
+
+    private final Setting<Boolean> includeLargeBuds = sgFiltering.add(new BoolSetting.Builder()
+        .name("large-buds")
+        .description("Include large amethyst buds")
+        .defaultValue(true)
+        .build());
+
+    private final Setting<Boolean> includeClusters = sgFiltering.add(new BoolSetting.Builder()
+        .name("clusters")
+        .description("Include amethyst clusters")
         .defaultValue(true)
         .build());
 
@@ -65,7 +89,7 @@ public class RotatedDeepslateESP extends Module {
 
     private final Setting<Integer> minY = sgRange.add(new IntSetting.Builder()
         .name("min-y")
-        .description("Minimum Y level to scan for rotated deepslate")
+        .description("Minimum Y level to scan for amethyst clusters")
         .defaultValue(-64)
         .min(-64)
         .max(128)
@@ -74,7 +98,7 @@ public class RotatedDeepslateESP extends Module {
 
     private final Setting<Integer> maxY = sgRange.add(new IntSetting.Builder()
         .name("max-y")
-        .description("Maximum Y level to scan for rotated deepslate")
+        .description("Maximum Y level to scan for amethyst clusters")
         .defaultValue(128)
         .min(-64)
         .max(320)
@@ -106,11 +130,11 @@ public class RotatedDeepslateESP extends Module {
         .visible(useThreading::get)
         .build());
 
-    private final Set<BlockPos> rotatedDeepslatePositions = ConcurrentHashMap.newKeySet();
+    private final Set<BlockPos> clusterPositions = ConcurrentHashMap.newKeySet();
     private ExecutorService threadPool;
 
-    public RotatedDeepslateESP() {
-        super(DonutSMPTools.BASE_HUNTING_CATEGORY, "RotatedDeepslateESP", "ESP for rotated deepslate blocks with threading and tracer support.");
+    public ClusterFinder() {
+        super(DonutSMPTools.BASE_HUNTING_CATEGORY, "ClusterFinder", "ESP for amethyst clusters and buds with threading and tracer support.");
     }
 
     @Override
@@ -121,17 +145,17 @@ public class RotatedDeepslateESP extends Module {
             threadPool = Executors.newFixedThreadPool(threadPoolSize.get());
         }
 
-        rotatedDeepslatePositions.clear();
+        clusterPositions.clear();
 
         if (useThreading.get()) {
             for (Chunk chunk : Utils.chunks()) {
                 if (chunk instanceof WorldChunk wc) {
-                    threadPool.submit(() -> scanChunk(wc));
+                    threadPool.submit(() -> scanChunkForClusters(wc));
                 }
             }
         } else {
             for (Chunk chunk : Utils.chunks()) {
-                if (chunk instanceof WorldChunk wc) scanChunk(wc);
+                if (chunk instanceof WorldChunk wc) scanChunkForClusters(wc);
             }
         }
     }
@@ -141,15 +165,15 @@ public class RotatedDeepslateESP extends Module {
         if (threadPool != null && !threadPool.isShutdown()) {
             threadPool.shutdownNow();
         }
-        rotatedDeepslatePositions.clear();
+        clusterPositions.clear();
     }
 
     @EventHandler
     private void onChunkLoad(ChunkDataEvent event) {
         if (useThreading.get() && threadPool != null && !threadPool.isShutdown()) {
-            threadPool.submit(() -> scanChunk(event.chunk()));
+            threadPool.submit(() -> scanChunkForClusters(event.chunk()));
         } else {
-            scanChunk(event.chunk());
+            scanChunkForClusters(event.chunk());
         }
     }
 
@@ -158,69 +182,71 @@ public class RotatedDeepslateESP extends Module {
         BlockPos pos = event.pos;
         BlockState state = event.newState;
 
-        if (isRotatedDeepslate(state)) {
-            rotatedDeepslatePositions.add(pos);
-            if (deepslateChat.get() && !limitChatSpam.get()) {
-                info("Found rotated deepslate at " + pos);
+        if (isAmethystCluster(state, pos.getY())) {
+            clusterPositions.add(pos);
+            if (clusterChat.get() && !limitChatSpam.get()) {
+                info("Found " + getClusterTypeName(state) + " at " + pos);
             }
         } else {
-            rotatedDeepslatePositions.remove(pos);
+            clusterPositions.remove(pos);
         }
     }
 
-    private void scanChunk(WorldChunk chunk) {
+    private void scanChunkForClusters(WorldChunk chunk) {
         ChunkPos cpos = chunk.getPos();
         int xStart = cpos.getStartX();
         int zStart = cpos.getStartZ();
         int yMin = Math.max(chunk.getBottomY(), minY.get());
         int yMax = Math.min(chunk.getBottomY() + chunk.getHeight(), maxY.get());
 
-        Set<BlockPos> foundRotated = new HashSet<>();
+        Set<BlockPos> foundClusters = new HashSet<>();
         for (int x = xStart; x < xStart + 16; x++) {
             for (int z = zStart; z < zStart + 16; z++) {
                 for (int y = yMin; y < yMax; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState state = chunk.getBlockState(pos);
 
-                    if (isRotatedDeepslate(state)) {
-                        rotatedDeepslatePositions.add(pos);
-                        foundRotated.add(pos);
+                    if (isAmethystCluster(state, y)) {
+                        clusterPositions.add(pos);
+                        foundClusters.add(pos);
                     }
                 }
             }
         }
 
-        if (!foundRotated.isEmpty() && deepslateChat.get()) {
-            info("Found " + foundRotated.size() + " rotated deepslate blocks in chunk " + cpos);
+        if (!foundClusters.isEmpty() && clusterChat.get()) {
+            info("Found " + foundClusters.size() + " amethyst clusters in chunk " + cpos);
         }
     }
 
-    private boolean isRotatedDeepslate(BlockState state) {
-        if (!isDeepslateVariant(state)) return false;
-        if (!state.contains(Properties.AXIS)) return false;
-        Direction.Axis axis = state.get(Properties.AXIS);
-        return axis != Direction.Axis.Y;
+    private boolean isAmethystCluster(BlockState state, int y) {
+        if (includeSmallBuds.get() && state.getBlock() == Blocks.SMALL_AMETHYST_BUD) return true;
+        if (includeMediumBuds.get() && state.getBlock() == Blocks.MEDIUM_AMETHYST_BUD) return true;
+        if (includeLargeBuds.get() && state.getBlock() == Blocks.LARGE_AMETHYST_BUD) return true;
+        if (includeClusters.get() && state.getBlock() == Blocks.AMETHYST_CLUSTER) return true;
+        return false;
     }
 
-    private boolean isDeepslateVariant(BlockState state) {
-        return state.getBlock() == Blocks.DEEPSLATE ||
-               state.getBlock() == Blocks.COBBLED_DEEPSLATE ||
-               state.getBlock() == Blocks.POLISHED_DEEPSLATE ||
-               state.getBlock() == Blocks.DEEPSLATE_BRICKS ||
-               state.getBlock() == Blocks.DEEPSLATE_TILES ||
-               state.getBlock() == Blocks.CHISELED_DEEPSLATE;
+    private String getClusterTypeName(BlockState state) {
+        return switch (state.getBlock().toString()) {
+            case "minecraft.block.SmallAmethystBudBlock" -> "Small Bud";
+            case "minecraft.block.MediumAmethystBudBlock" -> "Medium Bud";
+            case "minecraft.block.LargeAmethystBudBlock" -> "Large Bud";
+            case "minecraft.block.AmethystClusterBlock" -> "Cluster";
+            default -> "Amethyst";
+        };
     }
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        Color side = new Color(deepslateColor.get());
-        Color outline = new Color(deepslateColor.get());
+        Color side = new Color(clusterColor.get());
+        Color outline = new Color(clusterColor.get());
 
-        for (BlockPos pos : rotatedDeepslatePositions) {
+        for (BlockPos pos : clusterPositions) {
             double dist = mc.player.getPos().distanceTo(Vec3d.ofCenter(pos));
             if (dist > 150) continue;
 
-            event.renderer.box(new net.minecraft.util.math.Box(pos), side, outline, deepslateShapeMode.get(), 0);
+            event.renderer.box(new net.minecraft.util.math.Box(pos), side, outline, clusterShapeMode.get(), 0);
 
             if (tracers.get()) {
                 Vec3d playerPos = mc.gameRenderer.getCamera().getPos();

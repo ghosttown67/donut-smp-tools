@@ -120,7 +120,7 @@ public class RegionMap extends Module {
         if (!isValidRenderState()) return;
 
         try {
-            Vec3d playerPos = new Vec3d(mc.player.getX(), mc.player.getY(), mc.player.getZ());
+            Vec3d playerPos = getDisplayPosition();
             MapRenderContext ctx = new MapRenderContext(
                     mapPosX.get(), mapPosY.get(),
                     cellDimension.get(), mapTransparency.get()
@@ -150,6 +150,26 @@ public class RegionMap extends Module {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private Vec3d getDisplayPosition() {
+        double x = mc.player.getX();
+        double y = mc.player.getY();
+        double z = mc.player.getZ();
+
+        // Convert Nether coordinates to Overworld coordinates (1:8 scale)
+        if (isInNether()) {
+            x *= 8;
+            z *= 8;
+        }
+
+        return new Vec3d(x, y, z);
+    }
+
+    private boolean isInNether() {
+        if (mc.world == null) return false;
+        String dimensionKey = mc.world.getRegistryKey().getValue().toString();
+        return dimensionKey.equals("minecraft:the_nether");
     }
 
     private boolean isValidRenderState() {
