@@ -21,6 +21,7 @@ import com.donutsmp.addon.modules.main.Relog;
 import com.donutsmp.addon.modules.main.StashFinder;
 import com.donutsmp.addon.modules.esp.LightESP;
 import com.donutsmp.addon.modules.main.RegionMap;
+import com.donutsmp.addon.modules.main.HotbarObfuscate;
 import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
@@ -65,6 +66,7 @@ public class DonutSMPTools extends MeteorAddon {
         Modules.get().add(new NoBlockInteract());
         Modules.get().add(new Relog());
         Modules.get().add(new RegionMap());
+        Modules.get().add(new HotbarObfuscate());
 
 
         LOG.info("Initializing DonutSMP Tools");
