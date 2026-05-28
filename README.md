@@ -1,85 +1,34 @@
-# Meteor Addon Template
+# DonutSMP Tools
 
-A template to allow easy usage of the Meteor Addon API.
+A Meteor addon for DonutSMP by critical.
 
 ### How to use
 
-- Clone this project
-- Use this template to create new modules/commands
-- Build the executable using the gradle `build` task.
-- Run the mod with Meteor.
+- Download the mod from releases, and place it in your mods folder.
+- Make sure your on 1.21.4 of minecraft and your fabric loader is atleast 0.18.4
+- Run minecraft, but before using the mod on any servers like DonutSMP make sure you have opsec / exploit preventer / autism defender in your mods folder or else you'll get banned for meteor.
+- Join the discord below if you need support.
 
-### Project structure
+### Key Features
 
-```text
-.
-│── .github
-│   ╰── workflows
-│       │── dev_build.yml
-│       ╰── pull_request.yml
-│── gradle
-│   ╰── wrapper
-│       │── gradle-wrapper.jar
-│       ╰── gradle-wrapper.properties
-│── src
-│   ╰── main
-│       │── java
-│       │   ╰── com
-│       │       ╰── example
-│       │           ╰── addon
-│       │               │── commands
-│       │               │   ╰── CommandExample
-│       │               │── hud
-│       │               │   ╰── HudExample
-│       │               │── modules
-│       │               │   ╰── ModuleExample
-│       │               ╰── AddonTemplate
-│       ╰── resources
-│           │── assets
-│           │   ╰── template
-│           │       ╰── icon.png
-│           │── addon-template.mixins.json
-│           ╰── fabric.mod.json
-│── .editorconfig
-│── .gitignore
-│── build.gradle
-│── gradle.properties
-│── gradlew
-│── gradlew.bat
-│── LICENSE
-│── README.md
-╰── settings.gradle
-```
+1 - Chunk Finder | Detects suspicious chunks based on block placements and player activity.
+2 - Filled Holes ESP | Detects filled in holes that have been filled in with filler blocks, ie adurite.
+3 - Stash Finder | Flags areas with a number of storage blocks, Notifying if the amount reaches a set threshold.
+4 - HoleTunnelStair ESP | A optimized version of Glazeds own module, much less laggy and detects more.
+5 - Kelp ESP | Another optimized version of Glazeds own module, Detects kelp based on % of max grown kelp in a chunk.
+6 - Sweet Berry ESP | Flags fully grown berry bushes.
+6 - Bee Nest ESP | Flags Bee Nests with a honey level of 1 - 5.
+6 - Hotbar Obfuscate | Prevents mods tracking your account via the Hotbar by obfuscating it. (very useful for streaming)
+7 - Relog | Rejoin the server
 
-This is the default project structure. Each folder/file has a specific purpose.  
-Here is a brief explanation of the ones you might need to modify:
 
-- `.github/workflows`: Contains the GitHub Actions configuration files.
-- `gradle`: Contains the Gradle wrapper files.  
-  Edit the `gradle.properties` file to change the version of the Gradle wrapper.
-- `src/main/java/com/example/addon`: Contains the main class of the addon.  
-  Here you can register your custom commands, modules, and HUDs.  
-  Edit the `getPackage` method to reflect the package of your addon.
-- `src/main/resources`: Contains the resources of the addon.
-    - `assets`: Contains the assets of the addon.  
-      You can add your own assets here, separated in subfolders.
-        - `template`: Contains the assets of the template.  
-          You can replace the `icon.png` file with your own addon icon.  
-          Also, rename this folder to reflect the name of your addon.
-    - `addon-template.mixins.json`: Contains the Mixin configuration for the addon.  
-      You can add your own mixins in the `client` array.
-    - `fabric.mod.json`: Contains the metadata of the addon.  
-      Edit the various fields to reflect the metadata of your addon.
-- `build.gradle.kts`: Contains the Gradle build script.  
-  You can manage the dependencies of the addon here.  
-  Remember to keep the `fabric-loom` version up-to-date.
-- `gradle.properties.kts`: Contains the properties of the Gradle build.  
-  These will be used by the build script.
-- `LICENSE`: Contains the license of the addon.  
-  You can edit this file to change the license of your addon.
-- `README.md`: Contains the documentation of the addon.  
-  You can edit this file to reflect the documentation of your addon, and showcase its features.
+### Credits
+Critical
 
-## License
 
-This template is available under the CC0 license. Feel free to use it for your own projects.
+### Support
+https://discord.gg/ngq6aCgSgG
+
+
+
+
