@@ -11,23 +11,23 @@ A Meteor addon for DonutSMP by critical.
 
 ### Key Features
 
-- 1  Chunk Finder | Detects suspicious chunks based on block placements and player activity.
+- 1:  Chunk Finder | Detects suspicious chunks based on block placements and player activity.
 
-- 2  Filled Holes ESP | Detects filled in holes that have been filled in with filler blocks, ie adurite.
+- 2:  Filled Holes ESP | Detects filled in holes that have been filled in with filler blocks, ie adurite.
 
-- 3  Stash Finder | Flags areas with a number of storage blocks, Notifying if the amount reaches a set threshold.
+- 3:  Stash Finder | Flags areas with a number of storage blocks, Notifying if the amount reaches a set threshold.
 
-- 4  HoleTunnelStair ESP | A optimized version of Glazeds own module, much less laggy and detects more.
+- 4:  HoleTunnelStair ESP | A optimized version of Glazeds own module, much less laggy and detects more.
 
-- 5  Kelp ESP | Another optimized version of Glazeds own module, Detects kelp based on % of max grown kelp in a chunk.
+- 5:  Kelp ESP | Another optimized version of Glazeds own module, Detects kelp based on % of max grown kelp in a chunk.
 
-- 6  Sweet Berry ESP | Flags fully grown berry bushes.
+- 6:  Sweet Berry ESP | Flags fully grown berry bushes.
 
-- 6  Bee Nest ESP | Flags Bee Nests with a honey level of 1 - 5.
+- 7:  Bee Nest ESP | Flags Bee Nests with a honey level of 1 - 5.
 
-- 6  Hotbar Obfuscate | Prevents mods tracking your account via the Hotbar by obfuscating it. (very useful for streaming)
+- 8:  Hotbar Obfuscate | Prevents mods tracking your account via the Hotbar by obfuscating it. (very useful for streaming)
 
-- 7  Relog | Rejoin the server
+- 9:  Relog | Rejoin the server
 
 
 ### Credits
