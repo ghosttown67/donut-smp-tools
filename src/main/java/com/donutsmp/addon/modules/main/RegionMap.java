@@ -157,7 +157,7 @@ public class RegionMap extends Module {
         double y = mc.player.getY();
         double z = mc.player.getZ();
 
-        // Convert Nether coordinates to Overworld coordinates (1:8 scale)
+
         if (isInNether()) {
             x *= 8;
             z *= 8;

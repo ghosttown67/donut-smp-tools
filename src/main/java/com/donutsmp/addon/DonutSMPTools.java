@@ -1,7 +1,7 @@
 package com.donutsmp.addon;
 
 
-import com.donutsmp.addon.hud.HudExample;
+
 import com.donutsmp.addon.modules.esp.BeeNestESP;
 import com.donutsmp.addon.modules.esp.SweetBerryESP;
 import com.donutsmp.addon.modules.esp.FilledHolesESP;
@@ -61,7 +61,7 @@ public class DonutSMPTools extends MeteorAddon {
         Modules.get().add(new StashFinder());
 
 
-        // Main category modules
+
         Modules.get().add(new HideScoreboard());
         Modules.get().add(new NoBlockInteract());
         Modules.get().add(new Relog());
@@ -69,13 +69,15 @@ public class DonutSMPTools extends MeteorAddon {
         Modules.get().add(new HotbarObfuscate());
 
 
+
+
         LOG.info("Initializing DonutSMP Tools");
 
 
 
 
-        // HUD
-        Hud.get().register(HudExample.INFO);
+
+
     }
 
     @Override

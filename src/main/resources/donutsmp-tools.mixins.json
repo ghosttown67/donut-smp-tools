@@ -3,7 +3,7 @@
   "package": "com.donutsmp.addon.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ExampleMixin"
+
   ],
   "injectors": {
     "defaultRequire": 1

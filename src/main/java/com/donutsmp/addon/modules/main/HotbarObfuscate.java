@@ -30,7 +30,7 @@ public class HotbarObfuscate extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) return;
 
-        // Save original items once
+
         if (!itemsSaved) {
             for (int i = 0; i < 9; i++) {
                 savedHotbarItems[i] = mc.player.getInventory().getStack(i).copy();
@@ -43,12 +43,12 @@ public class HotbarObfuscate extends Module {
             itemsSaved = true;
         }
 
-        // Set all hotbar items to air
+
         for (int i = 0; i < 9; i++) {
             mc.player.getInventory().setStack(i, ItemStack.EMPTY);
         }
 
-        // Set inventory items to air if option is enabled
+
         if (obfuscateInventory.get()) {
             for (int i = 9; i < 36; i++) {
                 mc.player.getInventory().setStack(i, ItemStack.EMPTY);
@@ -60,7 +60,7 @@ public class HotbarObfuscate extends Module {
     public void onDeactivate() {
         if (mc.player == null) return;
 
-        // Restore original items
+
         for (int i = 0; i < 9; i++) {
             if (savedHotbarItems[i] != null) {
                 mc.player.getInventory().setStack(i, savedHotbarItems[i]);

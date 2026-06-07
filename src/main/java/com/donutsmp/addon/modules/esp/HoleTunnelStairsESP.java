@@ -443,7 +443,7 @@ public class HoleTunnelStairsESP extends Module {
     }
 
     private void check3x1Hole(BlockPos pos, Set<Box> holes3x1) {
-        // Check 3x1 hole in X direction (3 blocks east-west, 1 block north-south)
+
         if (isValid3x1HoleSectionX(pos)) {
             BlockPos.Mutable currentPos = pos.mutableCopy();
             while (isValid3x1HoleSectionX(currentPos)) {
@@ -460,7 +460,7 @@ public class HoleTunnelStairsESP extends Module {
             }
         }
 
-        // Check 3x1 hole in Z direction (1 block east-west, 3 blocks north-south)
+
         if (isValid3x1HoleSectionZ(pos)) {
             BlockPos.Mutable currentPos = pos.mutableCopy();
             while (isValid3x1HoleSectionZ(currentPos)) {
@@ -483,7 +483,7 @@ public class HoleTunnelStairsESP extends Module {
     }
 
     private boolean isValid3x1HoleSectionX(BlockPos pos) {
-        // Check if this is part of a 3x1 hole in X direction
+
         return isPassableBlock(pos) &&
             isPassableBlock(pos.east()) &&
             isPassableBlock(pos.east(2)) &&
@@ -498,7 +498,7 @@ public class HoleTunnelStairsESP extends Module {
     }
 
     private boolean isValid3x1HoleSectionZ(BlockPos pos) {
-        // Check if this is part of a 3x1 hole in Z direction
+
         return isPassableBlock(pos) &&
             isPassableBlock(pos.south()) &&
             isPassableBlock(pos.south(2)) &&
@@ -689,7 +689,7 @@ public class HoleTunnelStairsESP extends Module {
         BlockState state = mc.world.getBlockState(pos);
         if (state.isAir()) return true;
         if (airBlocks.get()) return false;
-        // Fast path: check collision shape emptiness only
+
         return state.getCollisionShape(mc.world, pos).isEmpty();
     }
 

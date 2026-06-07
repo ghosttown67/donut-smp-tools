@@ -23,7 +23,7 @@ public class HideScoreboard extends Module {
         ScoreboardObjective current = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
 
         if (current != null) {
-            // Save it once
+
             if (savedObjective == null) savedObjective = current;
             scoreboard.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
         }
@@ -33,7 +33,7 @@ public class HideScoreboard extends Module {
     public void onDeactivate() {
         if (mc.world == null || savedObjective == null) return;
 
-        // Restore the scoreboard
+
         mc.world.getScoreboard().setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, savedObjective);
         savedObjective = null;
     }

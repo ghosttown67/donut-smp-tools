@@ -63,19 +63,19 @@ public class NoBlockInteract extends Module {
 
             if (!blockedBlocks.contains(block)) return;
 
-            // If holding an ender pearl in main hand
+
             if (mc.player.getMainHandStack().getItem() == Items.ENDER_PEARL) {
                 event.cancel();
                 mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
                 mc.player.swingHand(Hand.MAIN_HAND);
             }
-            // If holding an ender pearl in off-hand
+
             else if (mc.player.getOffHandStack().getItem() == Items.ENDER_PEARL) {
                 event.cancel();
                 mc.interactionManager.interactItem(mc.player, Hand.OFF_HAND);
                 mc.player.swingHand(Hand.OFF_HAND);
             }
-            // Otherwise, just cancel the interaction (block GUI)
+
             else {
                 event.cancel();
                 mc.player.swingHand(Hand.MAIN_HAND);

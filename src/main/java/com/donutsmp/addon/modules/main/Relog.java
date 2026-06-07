@@ -12,7 +12,7 @@ import net.minecraft.text.Text;
 public class Relog extends Module {
 
     public Relog() {
-        super(DonutSMPTools.MAIN_CATEGORY, "relog", "Auto-reconnects to the current server cleanly.");
+        super(DonutSMPTools.MAIN_CATEGORY, "relog", "Auto relog to the current server.");
     }
 
     @Override
@@ -28,23 +28,23 @@ public class Relog extends Module {
             return;
         }
 
-        // 1. CLEAN DISCONNECT: Tell the server we are leaving so it doesn't leave a ghost player
+
         if (mc.getNetworkHandler() != null) {
             mc.getNetworkHandler().getConnection().disconnect(Text.literal("Relogging..."));
         }
 
-        // Ensure the client world cleans itself up
+
         if (mc.world != null) {
             mc.world.disconnect();
         }
 
-        // 2. Clear local client state and safely transition the GUI
+
         mc.disconnect();
 
-        // 3. Reconnect on a separate thread
+
         new Thread(() -> {
             try {
-                // 1.5 seconds is plenty now that the server knows we left
+
                 Thread.sleep(1500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -54,8 +54,8 @@ public class Relog extends Module {
                 try {
                     ServerAddress serverAddr = ServerAddress.parse(currentServer.address);
 
-                    // We wrap the TitleScreen in a MultiplayerScreen so pressing "Cancel"
-                    // while reconnecting takes you back to the server list, not the main menu
+
+
                     ConnectScreen.connect(
                         new MultiplayerScreen(new TitleScreen()),
                         mc,

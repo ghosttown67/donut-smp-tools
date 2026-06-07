@@ -6,6 +6,8 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.MeteorToast;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.*;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -27,60 +29,41 @@ public class StashFinder extends Module {
     private final SettingGroup sgNotification = settings.createGroup("Notification");
     private final SettingGroup sgWebhook = settings.createGroup("Webhook");
 
-    // Detection settings
-    private final Setting<Boolean> chests = sgDetection.add(new BoolSetting.Builder()
-        .name("Chests")
-        .description("Detect chests")
-        .defaultValue(true)
-        .build()
-    );
 
-    private final Setting<Boolean> barrels = sgDetection.add(new BoolSetting.Builder()
-        .name("Barrels")
-        .description("Detect barrels")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> shulkers = sgDetection.add(new BoolSetting.Builder()
-        .name("Shulker Boxes")
-        .description("Detect shulker boxes")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> enderChests = sgDetection.add(new BoolSetting.Builder()
-        .name("Ender Chests")
-        .description("Detect ender chests")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> furnaces = sgDetection.add(new BoolSetting.Builder()
-        .name("Furnaces")
-        .description("Detect furnaces")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> dispensersDroppers = sgDetection.add(new BoolSetting.Builder()
-        .name("Dispensers/Droppers")
-        .description("Detect dispensers and droppers")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> hoppers = sgDetection.add(new BoolSetting.Builder()
-        .name("Hoppers")
-        .description("Detect hoppers")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> spawners = sgDetection.add(new BoolSetting.Builder()
-        .name("Spawners")
-        .description("Detect spawners")
-        .defaultValue(true)
+    private final Setting<java.util.List<Block>> storageBlocks = sgDetection.add(new BlockListSetting.Builder()
+        .name("Storage Blocks")
+        .description("Storage and redstone blocks to detect")
+        .defaultValue(java.util.Arrays.asList(
+            Blocks.CHEST,
+            Blocks.TRAPPED_CHEST,
+            Blocks.BARREL,
+            Blocks.SHULKER_BOX,
+            Blocks.BLACK_SHULKER_BOX,
+            Blocks.BLUE_SHULKER_BOX,
+            Blocks.BROWN_SHULKER_BOX,
+            Blocks.CYAN_SHULKER_BOX,
+            Blocks.GRAY_SHULKER_BOX,
+            Blocks.GREEN_SHULKER_BOX,
+            Blocks.LIGHT_BLUE_SHULKER_BOX,
+            Blocks.LIGHT_GRAY_SHULKER_BOX,
+            Blocks.LIME_SHULKER_BOX,
+            Blocks.MAGENTA_SHULKER_BOX,
+            Blocks.ORANGE_SHULKER_BOX,
+            Blocks.PINK_SHULKER_BOX,
+            Blocks.PURPLE_SHULKER_BOX,
+            Blocks.RED_SHULKER_BOX,
+            Blocks.WHITE_SHULKER_BOX,
+            Blocks.YELLOW_SHULKER_BOX,
+            Blocks.ENDER_CHEST,
+            Blocks.FURNACE,
+            Blocks.BLAST_FURNACE,
+            Blocks.SMOKER,
+            Blocks.DISPENSER,
+            Blocks.DROPPER,
+            Blocks.HOPPER,
+            Blocks.CRAFTER,
+            Blocks.SPAWNER
+        ))
         .build()
     );
 
@@ -118,7 +101,7 @@ public class StashFinder extends Module {
         .build()
     );
 
-    // Notification settings
+
     private final Setting<Boolean> sendNotifications = sgNotification.add(new BoolSetting.Builder()
         .name("Send Notifications")
         .description("Send visual/audio notifications")
@@ -133,7 +116,7 @@ public class StashFinder extends Module {
         .build()
     );
 
-    // Webhook settings
+
     private final Setting<Boolean> enableWebhook = sgWebhook.add(new BoolSetting.Builder()
         .name("Enable Webhook")
         .description("Send webhook notifications on stash detection")
@@ -213,33 +196,21 @@ public class StashFinder extends Module {
 
         if (Math.sqrt(chunkXAbs * chunkXAbs + chunkZAbs * chunkZAbs) < minimumDistance.get()) return;
 
-        int chestsCount = 0;
-        int barrelsCount = 0;
-        int shulkersCount = 0;
-        int enderChestsCount = 0;
-        int furnacesCount = 0;
-        int dispensersDroppersCount = 0;
-        int hoppersCount = 0;
+        java.util.List<Block> selectedBlocks = storageBlocks.get();
+        int totalStorage = 0;
         int spawnersCount = 0;
 
         for (BlockEntity blockEntity : worldChunk.getBlockEntities().values()) {
-            if (spawners.get() && blockEntity instanceof MobSpawnerBlockEntity) {
-                spawnersCount++;
-                continue;
+            Block block = worldChunk.getBlockState(blockEntity.getPos()).getBlock();
+
+            if (selectedBlocks.contains(block)) {
+                if (block == Blocks.SPAWNER) {
+                    spawnersCount++;
+                } else {
+                    totalStorage++;
+                }
             }
-
-            if (chests.get() && blockEntity instanceof ChestBlockEntity) chestsCount++;
-            else if (barrels.get() && blockEntity instanceof BarrelBlockEntity) barrelsCount++;
-            else if (shulkers.get() && blockEntity instanceof ShulkerBoxBlockEntity) shulkersCount++;
-            else if (enderChests.get() && blockEntity instanceof EnderChestBlockEntity) enderChestsCount++;
-            else if (furnaces.get() && blockEntity instanceof AbstractFurnaceBlockEntity) furnacesCount++;
-            else if (dispensersDroppers.get() && blockEntity instanceof DispenserBlockEntity)
-                dispensersDroppersCount++;
-            else if (hoppers.get() && blockEntity instanceof HopperBlockEntity) hoppersCount++;
         }
-
-        int totalStorage = chestsCount + barrelsCount + shulkersCount + enderChestsCount +
-                furnacesCount + dispensersDroppersCount + hoppersCount + spawnersCount;
 
         boolean isStash = false;
         boolean isCriticalSpawner = false;
@@ -270,9 +241,7 @@ public class StashFinder extends Module {
             }
 
             if (enableWebhook.get()) {
-                sendWebhookNotification(x, z, chestsCount, barrelsCount, shulkersCount, enderChestsCount,
-                        furnacesCount, dispensersDroppersCount, hoppersCount, spawnersCount,
-                        isCriticalSpawner, detectionReason);
+                sendWebhookNotification(x, z, totalStorage, spawnersCount, isCriticalSpawner, detectionReason);
             }
 
             if (disconnectOnFind.get()) {
@@ -284,10 +253,8 @@ public class StashFinder extends Module {
         }
     }
 
-    private void sendWebhookNotification(int x, int z, int chestsCount, int barrelsCount, int shulkersCount,
-                                         int enderChestsCount, int furnacesCount, int dispensersDroppersCount,
-                                         int hoppersCount, int spawnersCount, boolean isCriticalSpawner,
-                                         String detectionReason) {
+    private void sendWebhookNotification(int x, int z, int totalStorage, int spawnersCount,
+                                         boolean isCriticalSpawner, String detectionReason) {
         String url = webhookUrl.get().trim();
         if (url.isEmpty()) return;
 
@@ -298,23 +265,17 @@ public class StashFinder extends Module {
                 String stashType = isCriticalSpawner ? "Spawner Base" : "Stash";
                 String messageContent = (selfPing.get() && !discordId.get().trim().isEmpty()) ? String.format("<@%s>", discordId.get().trim()) : "";
 
-                // Build compact field list
+
                 StringBuilder fieldsJson = new StringBuilder();
                 fieldsJson.append("{\"name\":\"📍 Location\",\"value\":\"").append(x).append(", ").append(z).append("\",\"inline\":true},");
                 fieldsJson.append("{\"name\":\"👤 Player\",\"value\":\"").append(playerCoords).append("\",\"inline\":true},");
                 fieldsJson.append("{\"name\":\"🏠 Server\",\"value\":\"").append(serverInfo).append("\",\"inline\":true},");
-                fieldsJson.append("{\"name\":\"📦 Storage\",\"value\":\"");
+                fieldsJson.append("{\"name\":\"📦 Storage Count\",\"value\":\"").append(totalStorage).append("\",\"inline\":true},");
 
-                if (spawnersCount > 0) fieldsJson.append("🕷 ").append(spawnersCount).append(" ");
-                if (chestsCount > 0) fieldsJson.append("📦 ").append(chestsCount).append(" ");
-                if (barrelsCount > 0) fieldsJson.append("🛢 ").append(barrelsCount).append(" ");
-                if (shulkersCount > 0) fieldsJson.append("📫 ").append(shulkersCount).append(" ");
-                if (enderChestsCount > 0) fieldsJson.append("🌌 ").append(enderChestsCount).append(" ");
-                if (furnacesCount > 0) fieldsJson.append("🔥 ").append(furnacesCount).append(" ");
-                if (dispensersDroppersCount > 0) fieldsJson.append("🎯 ").append(dispensersDroppersCount).append(" ");
-                if (hoppersCount > 0) fieldsJson.append("⏱ ").append(hoppersCount).append(" ");
+                if (spawnersCount > 0) {
+                    fieldsJson.append("{\"name\":\"🕷 Spawners\",\"value\":\"").append(spawnersCount).append("\",\"inline\":true},");
+                }
 
-                fieldsJson.append("\",\"inline\":false},");
                 fieldsJson.append("{\"name\":\"🔍 Detection\",\"value\":\"").append(detectionReason).append("\",\"inline\":true},");
                 fieldsJson.append("{\"name\":\"⏰ Time\",\"value\":\"<t:").append(System.currentTimeMillis() / 1000).append(":R>\",\"inline\":true}");
 

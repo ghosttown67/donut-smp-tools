@@ -149,14 +149,14 @@ public class LightESP extends Module {
         tickCounter++;
         ChunkPos playerChunk = mc.player.getChunkPos();
 
-        // Rescan chunks when player moves to a new chunk or on update interval
+
         if (!playerChunk.equals(lastPlayerChunk) || tickCounter >= updateFrequency.get()) {
             lastPlayerChunk = playerChunk;
             tickCounter = 0;
             rescanChunks(playerChunk);
         }
 
-        // Render the found light blocks
+
         renderLightBlocks(event);
     }
 
@@ -164,14 +164,14 @@ public class LightESP extends Module {
         int radius = chunkRadius.get();
         Set<ChunkPos> chunksInRadius = new HashSet<>();
 
-        // Build set of all chunks currently in radius
+
         for (int cx = -radius; cx <= radius; cx++) {
             for (int cz = -radius; cz <= radius; cz++) {
                 chunksInRadius.add(new ChunkPos(playerChunk.x + cx, playerChunk.z + cz));
             }
         }
 
-        // Scan only NEW chunks (ones we haven't scanned yet)
+
         for (ChunkPos chunk : chunksInRadius) {
             if (!scannedChunks.contains(chunk) && mc.world.isChunkLoaded(chunk.x, chunk.z)) {
                 scanChunkForLights(chunk);
@@ -179,13 +179,13 @@ public class LightESP extends Module {
             }
         }
 
-        // Remove light blocks from chunks that are now outside the radius
+
         lightBlocks.entrySet().removeIf(entry -> {
             ChunkPos blockChunk = new ChunkPos(entry.getKey());
             return !chunksInRadius.contains(blockChunk);
         });
 
-        // Clean up scanned chunks cache (only keep chunks in current radius)
+
         scannedChunks.retainAll(chunksInRadius);
     }
 
@@ -204,13 +204,13 @@ public class LightESP extends Module {
                     BlockPos pos = new BlockPos(chunkPos.getStartX() + x, y, chunkPos.getStartZ() + z);
                     int blockLight = mc.world.getLightLevel(LightType.BLOCK, pos);
 
-                    // Check if block light matches criteria
+
                     if (blockLight < minLightLevel.get() || blockLight > maxLightLevel.get()) {
                         lightBlocks.remove(pos);
                         continue;
                     }
 
-                    // If comparing with sky light, skip if block light <= sky light
+
                     if (compareWithSkyLight.get()) {
                         int skyLight = mc.world.getLightLevel(LightType.SKY, pos);
                         if (blockLight <= skyLight) {
@@ -235,7 +235,7 @@ public class LightESP extends Module {
         for (BlockPos pos : lightBlocks.keySet()) {
             if (maxBlocks > 0 && rendered >= maxBlocks) break;
 
-            // Skip if all 6 neighbors are also light blocks (fully occluded)
+
             if (cullOccluded && isFullyOccluded(pos)) {
                 continue;
             }
@@ -267,33 +267,33 @@ public class LightESP extends Module {
     }
 
     private SettingColor getLightColor(int lightLevel) {
-        // Smooth thermal color gradient based on light level
+
         float alpha;
         float red, green, blue;
 
         if (lightLevel <= 5) {
-            // Dark blue/purple for low levels
+
             float intensity = lightLevel / 5.0f;
             red = 0.2f + intensity * 0.3f;
             green = 0.2f + intensity * 0.2f;
             blue = 0.4f + intensity * 0.5f;
             alpha = 0.3f + intensity * 0.2f;
         } else if (lightLevel <= 10) {
-            // Cyan to yellow gradient
+
             float intensity = (lightLevel - 5) / 5.0f;
             red = 0.5f + intensity * 0.5f;
             green = 0.6f + intensity * 0.4f;
             blue = 0.9f - intensity * 0.7f;
             alpha = 0.5f + intensity * 0.2f;
         } else if (lightLevel <= 14) {
-            // Yellow to orange
+
             float intensity = (lightLevel - 10) / 4.0f;
             red = 1.0f;
             green = 1.0f - intensity * 0.3f;
             blue = 0.2f + intensity * 0.3f;
             alpha = 0.7f + intensity * 0.15f;
         } else {
-            // Bright white for level 15
+
             red = green = blue = 1.0f;
             alpha = 0.85f;
         }

@@ -20,7 +20,7 @@ public class CoveredHole extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgRender = settings.createGroup("Render");
 
-    // Settings
+
     private final Setting<Boolean> chatNotifications = sgGeneral.add(new BoolSetting.Builder()
         .name("chat-notifications")
         .description("Send chat messages when covered holes are found")
@@ -65,7 +65,7 @@ public class CoveredHole extends Module {
         .build()
     );
 
-    // Runtime data
+
     private final Map<Box, CoveredHoleInfo> coveredHoles = new ConcurrentHashMap<>();
     private final Set<Box> processedHoles = ConcurrentHashMap.newKeySet();
     private final Set<Box> pendingProcessing = ConcurrentHashMap.newKeySet();
@@ -250,7 +250,7 @@ public class CoveredHole extends Module {
                         }
                     }
                 } catch (Exception e) {
-                    // Silently handle task exceptions
+
                 } finally {
                     iterator.remove();
                     processedCount++;
@@ -294,7 +294,7 @@ public class CoveredHole extends Module {
                     shapeMode.get(), 0
                 );
             } catch (Exception e) {
-                // Silently handle rendering exceptions
+
             }
         }
     }

@@ -34,7 +34,7 @@ public class FilledHolesESP extends Module {
     private final SettingGroup sgAdvanced = settings.createGroup("Advanced");
     private final SettingGroup sgThreading = settings.createGroup("Threading");
 
-    // General Settings
+
     private final Setting<SettingColor> blockColor = sgGeneral.add(new ColorSetting.Builder()
         .name("block-color")
         .description("Color for detected filled hole blocks")
@@ -65,7 +65,7 @@ public class FilledHolesESP extends Module {
         .defaultValue(false)
         .build());
 
-    // Detection Settings
+
     private final Setting<Integer> columnHeightThreshold = sgDetection.add(new IntSetting.Builder()
         .name("column-height-threshold")
         .description("Minimum vertical blocks to flag (1-100)")
@@ -136,7 +136,7 @@ public class FilledHolesESP extends Module {
         .visible(ignoreChunksWithHoles::get)
         .build());
 
-    // Advanced Settings
+
     private final Setting<Boolean> tracers = sgAdvanced.add(new BoolSetting.Builder()
         .name("tracers")
         .description("Draw tracers to detected blocks")
@@ -166,7 +166,7 @@ public class FilledHolesESP extends Module {
         .defaultValue(false)
         .build());
 
-    // Threading Settings
+
     private final Setting<Boolean> useThreading = sgThreading.add(new BoolSetting.Builder()
         .name("enable-threading")
         .description("Use multi-threading for chunk scanning")
@@ -190,7 +190,7 @@ public class FilledHolesESP extends Module {
         .visible(useThreading::get)
         .build());
 
-    // Debug Settings
+
     private final Setting<Boolean> debugLogging = sgAdvanced.add(new BoolSetting.Builder()
         .name("debug-logging")
         .description("Log detection info to chat (may be spammy)")
@@ -257,23 +257,23 @@ public class FilledHolesESP extends Module {
         BlockPos pos = event.pos;
 
         Runnable updateTask = () -> {
-            // Check if this position or nearby positions form a filled hole
+
             BlockPos checkBase = findColumnBase(pos);
 
             if (isFilledHole(checkBase)) {
-                // Get all blocks in the column and add them
+
                 List<BlockPos> columnBlocks = getColumnBlocks(checkBase);
                 for (BlockPos blockPos : columnBlocks) {
                     detectedBlocks.add(blockPos);
                 }
                 detectedChunks.add(new ChunkPos(checkBase));
             } else {
-                // Column may have been broken, remove all blocks that were from this potential column
-                // Check positions above and below to find any columns we're part of
+
+
                 BlockPos current = pos;
                 Set<BlockPos> toRemove = new HashSet<>();
 
-                // Find all potential positions in a vertical line
+
                 for (int i = 0; i < columnHeightThreshold.get() * 2; i++) {
                     BlockPos checkPos = current.up(i);
                     ChunkPos checkChunk = new ChunkPos(checkPos);
@@ -290,19 +290,19 @@ public class FilledHolesESP extends Module {
                     }
                 }
 
-                // Verify which ones should actually be removed
+
                 for (BlockPos removePos : toRemove) {
                     if (!isFilledHole(removePos)) {
                         detectedBlocks.remove(removePos);
                     } else {
-                        // Re-validate the column
+
                         List<BlockPos> columnBlocks = getColumnBlocks(findColumnBase(removePos));
                         detectedBlocks.addAll(columnBlocks);
                     }
                 }
             }
 
-            // Update chunk detection status
+
             for (ChunkPos cpos : new HashSet<>(detectedChunks)) {
                 boolean hasBlocks = false;
                 for (BlockPos bp : detectedBlocks) {
@@ -331,7 +331,7 @@ public class FilledHolesESP extends Module {
         Set<BlockPos> chunkDetections = new HashSet<>();
         Set<BlockPos> processedBases = new HashSet<>();
 
-        // Use scanline approach: for each (x,z) coordinate, scan Y vertically
+
         for (int x = xStart; x < xStart + 16; x++) {
             for (int z = zStart; z < zStart + 16; z++) {
                 int consecutiveFiller = 0;
@@ -342,23 +342,23 @@ public class FilledHolesESP extends Module {
                     BlockState state = mc.world.getBlockState(pos);
                     Block block = state.getBlock();
 
-                    // Check if this block is a filler block
+
                     if (isFillerBlock(block) && !isAirBlock(block)) {
                         if (consecutiveFiller == 0) {
-                            baseY = y; // Mark the start of a potential column
+                            baseY = y;
                         }
                         consecutiveFiller++;
                     } else {
-                        // End of potential column - validate if it meets threshold
+
                         if (consecutiveFiller >= columnHeightThreshold.get()) {
                             BlockPos columnBase = new BlockPos(x, baseY, z);
 
                             if (!processedBases.contains(columnBase)) {
                                 processedBases.add(columnBase);
 
-                                // Verify this column is properly surrounded
+
                                 if (isColumnSurrounded(columnBase, consecutiveFiller)) {
-                                    // Add all blocks in this column
+
                                     for (int i = 0; i < consecutiveFiller; i++) {
                                         chunkDetections.add(columnBase.up(i));
                                     }
@@ -369,7 +369,7 @@ public class FilledHolesESP extends Module {
                     }
                 }
 
-                // Check if the column extends to the end of our search range
+
                 if (consecutiveFiller >= columnHeightThreshold.get()) {
                     BlockPos columnBase = new BlockPos(x, baseY, z);
 
@@ -386,13 +386,13 @@ public class FilledHolesESP extends Module {
             }
         }
 
-        // Remove old detections from this chunk
+
         detectedBlocks.removeIf(pos -> {
             ChunkPos blockChunk = new ChunkPos(pos);
             return blockChunk.equals(cpos) && !chunkDetections.contains(pos);
         });
 
-        // Add new detections
+
         int newDetections = 0;
         for (BlockPos pos : chunkDetections) {
             if (detectedBlocks.add(pos)) {
@@ -400,27 +400,27 @@ public class FilledHolesESP extends Module {
             }
         }
 
-        // Update detected chunks
+
         if (!chunkDetections.isEmpty()) {
             detectedChunks.add(cpos);
         } else {
             detectedChunks.remove(cpos);
         }
 
-        // Check for holes in the chunk if ignore-holes setting is enabled
+
         if (ignoreChunksWithHoles.get() && isHoleNearChunk(cpos, holeCheckDistance.get())) {
-            // Skip this chunk due to holes nearby
+
             return;
         }
 
-        // Chat notifications with block type
+
         if (chatNotifications.get() && !chunkDetections.isEmpty()) {
             String blockType = "Unknown";
             if (!chunkDetections.isEmpty()) {
                 BlockPos sample = chunkDetections.iterator().next();
                 Block block = mc.world.getBlockState(sample).getBlock();
                 String blockName = Registries.BLOCK.getId(block).getPath();
-                // Convert snake_case to Title Case
+
                 String[] parts = blockName.split("_");
                 StringBuilder titleCase = new StringBuilder();
                 for (String part : parts) {
@@ -455,7 +455,7 @@ public class FilledHolesESP extends Module {
     private boolean isFilledHole(BlockPos pos) {
         if (mc.world == null) return false;
 
-        // Check Y-range
+
         if (pos.getY() < minYLevel.get() || pos.getY() > maxYLevel.get()) {
             return false;
         }
@@ -463,41 +463,38 @@ public class FilledHolesESP extends Module {
         BlockState state = mc.world.getBlockState(pos);
         Block block = state.getBlock();
 
-        // Skip air blocks entirely
+
         if (isAirBlock(block)) {
             return false;
         }
 
-        // Check if block is a filler block
+
         if (!isFillerBlock(block)) {
             return false;
         }
 
-        // Find the base of the column at this position
+
         BlockPos columnBase = findColumnBase(pos);
 
-        // Measure vertical column height starting from base
+
         int columnHeight = measureColumnHeightFromBase(columnBase);
         if (columnHeight < columnHeightThreshold.get()) {
             return false;
         }
 
-        // Check all 4 cardinal directions are non-filler, non-air blocks
-        // This check applies to the entire column - all blocks must be surrounded
+
+
         return isColumnSurrounded(columnBase, columnHeight);
     }
 
-    /**
-     * Check if an entire column is surrounded on all 4 cardinal directions
-     * Requires majority of blocks (at least 50%) to be properly surrounded
-     */
+
     private boolean isColumnSurrounded(BlockPos base, int height) {
         if (mc.world == null) return false;
 
         int requiredSides = minSideCoverage.get();
         int properlyEnclosed = 0;
 
-        // Check each block in the column
+
         for (int i = 0; i < height; i++) {
             BlockPos checkPos = base.up(i);
             if (countCoveredSides(checkPos) >= requiredSides) {
@@ -505,26 +502,22 @@ public class FilledHolesESP extends Module {
             }
         }
 
-        // Require at least 50% of column to be properly surrounded
-        // This allows for some variation in the tunnel structure
-        int requiredEnclosed = (height + 1) / 2; // Ceiling division for 50%
+
+        int requiredEnclosed = (height + 1) / 2;
         return properlyEnclosed >= requiredEnclosed;
     }
 
-    /**
-     * Measure column height starting from a specific base position using scanline approach
-     */
+
     private int measureColumnHeightFromBase(BlockPos base) {
         if (mc.world == null) return 0;
 
         int height = 0;
         BlockPos current = base;
 
-        // Count consecutive filler blocks upward
         while (true) {
             Block block = mc.world.getBlockState(current).getBlock();
 
-            // Stop if we hit air or non-filler block
+
             if (isAirBlock(block) || !isFillerBlock(block)) {
                 break;
             }
@@ -544,7 +537,7 @@ public class FilledHolesESP extends Module {
         int centerX = chunkPos.getStartX() + 8;
         int centerZ = chunkPos.getStartZ() + 8;
 
-        // Search area around the chunk
+
         for (int x = centerX - maxDistance; x <= centerX + maxDistance; x++) {
             for (int z = centerZ - maxDistance; z <= centerZ + maxDistance; z++) {
                 for (int y = Math.max(mc.world.getBottomY(), minYLevel.get()); y <= Math.min(mc.world.getTopYInclusive(), maxYLevel.get()); y++) {
@@ -564,7 +557,7 @@ public class FilledHolesESP extends Module {
             return false;
         }
 
-        // Check for 1x1 hole
+
         if (isPassableBlock(pos) &&
             !isPassableBlock(pos.north()) &&
             !isPassableBlock(pos.south()) &&
@@ -573,7 +566,7 @@ public class FilledHolesESP extends Module {
             return true;
         }
 
-        // Check for 1x3 hole in X direction - check all 3 potential starting positions
+
         for (int offset = 0; offset < 3; offset++) {
             BlockPos start = pos.west(offset);
             if (isPassableBlock(start) &&
@@ -591,7 +584,7 @@ public class FilledHolesESP extends Module {
             }
         }
 
-        // Check for 1x3 hole in Z direction - check all 3 potential starting positions
+
         for (int offset = 0; offset < 3; offset++) {
             BlockPos start = pos.north(offset);
             if (isPassableBlock(start) &&
@@ -639,28 +632,28 @@ private boolean isAirBlock(Block block) {
         Block centerBlock = mc.world.getBlockState(pos).getBlock();
         int coveredSides = 0;
 
-        // North
+
         BlockState northState = mc.world.getBlockState(pos.north());
         Block northBlock = northState.getBlock();
         if (isSideCovered(northBlock, centerBlock)) {
             coveredSides++;
         }
 
-        // South
+
         BlockState southState = mc.world.getBlockState(pos.south());
         Block southBlock = southState.getBlock();
         if (isSideCovered(southBlock, centerBlock)) {
             coveredSides++;
         }
 
-        // East
+
         BlockState eastState = mc.world.getBlockState(pos.east());
         Block eastBlock = eastState.getBlock();
         if (isSideCovered(eastBlock, centerBlock)) {
             coveredSides++;
         }
 
-        // West
+
         BlockState westState = mc.world.getBlockState(pos.west());
         Block westBlock = westState.getBlock();
         if (isSideCovered(westBlock, centerBlock)) {
@@ -671,12 +664,12 @@ private boolean isAirBlock(Block block) {
     }
 
     private boolean isSideCovered(Block neighborBlock, Block centerBlock) {
-        // Covered if it's a solid non-filler block
+
         if (!isFillerBlock(neighborBlock) && !isAirBlock(neighborBlock) && !isFluidBlock(neighborBlock)) {
             return true;
         }
 
-        // Also covered if it's a different filler block type (but not the same type)
+
         if (isFillerBlock(neighborBlock) && neighborBlock != centerBlock) {
             return true;
         }
@@ -684,9 +677,7 @@ private boolean isAirBlock(Block block) {
         return false;
     }
 
-    /**
-     * Check if a block has all 4 cardinal directions covered by non-filler blocks
-     */
+
     private boolean areAllCardinalNeighborsNonFiller(BlockPos pos) {
         if (mc.world == null) return false;
 
@@ -696,9 +687,7 @@ private boolean isAirBlock(Block block) {
         return coveredSides >= requiredSides;
     }
 
-    /**
-     * Finds the base (lowest) position of a filled hole column
-     */
+
     private BlockPos findColumnBase(BlockPos pos) {
         if (mc.world == null) return pos;
 
@@ -714,11 +703,7 @@ private boolean isAirBlock(Block block) {
         }
     }
 
-    /**
-     * Gets all blocks in the filled hole column starting from a position
-     * Returns all consecutive filler blocks without re-validating side coverage
-     * (side coverage is already validated in isFilledHole for the base position)
-     */
+
     private List<BlockPos> getColumnBlocks(BlockPos pos) {
         List<BlockPos> blocks = new ArrayList<>();
         if (mc.world == null) return blocks;
@@ -726,11 +711,11 @@ private boolean isAirBlock(Block block) {
         BlockPos base = findColumnBase(pos);
         BlockPos current = base;
 
-        // Collect all consecutive filler blocks upward from the base
+
         while (true) {
             Block block = mc.world.getBlockState(current).getBlock();
 
-            // Stop if we hit air or non-filler block
+
             if (isAirBlock(block) || !isFillerBlock(block)) {
                 break;
             }
@@ -747,7 +732,7 @@ private boolean isAirBlock(Block block) {
             return false;
         }
 
-        // Check filler blocks setting
+
         return fillerBlocks.get().contains(block);
     }
 
@@ -760,12 +745,12 @@ private boolean isAirBlock(Block block) {
         Color chunkColorVal = new Color(chunkColor.get());
         Color tracerColorVal = new Color(tracerColor.get());
 
-        // Render individual blocks
+
         if (renderIndividualBlocks.get()) {
             for (BlockPos pos : detectedBlocks) {
                 event.renderer.box(pos, blockColorVal, blockColorVal, shapeMode.get(), 0);
 
-                // Render tracers
+
                 if (tracers.get()) {
                     Vec3d blockCenter = Vec3d.ofCenter(pos);
                     Vec3d startPos = getTracerStartPos(playerPos, event.tickDelta);
@@ -774,7 +759,7 @@ private boolean isAirBlock(Block block) {
             }
         }
 
-        // Render chunk highlights
+
         if (renderChunkHighlight.get()) {
             for (ChunkPos cpos : detectedChunks) {
                 renderChunkBox(event, cpos, chunkColorVal);
@@ -807,22 +792,22 @@ private boolean isAirBlock(Block block) {
         int y1 = minYLevel.get();
         int y2 = maxYLevel.get();
 
-        // Render chunk volume outline
+
         double x1d = x1, x2d = x2 + 1, y1d = y1, y2d = y2 + 1, z1d = z1, z2d = z2 + 1;
 
-        // Bottom square
+
         event.renderer.line(x1d, y1d, z1d, x2d, y1d, z1d, color);
         event.renderer.line(x2d, y1d, z1d, x2d, y1d, z2d, color);
         event.renderer.line(x2d, y1d, z2d, x1d, y1d, z2d, color);
         event.renderer.line(x1d, y1d, z2d, x1d, y1d, z1d, color);
 
-        // Top square
+
         event.renderer.line(x1d, y2d, z1d, x2d, y2d, z1d, color);
         event.renderer.line(x2d, y2d, z1d, x2d, y2d, z2d, color);
         event.renderer.line(x2d, y2d, z2d, x1d, y2d, z2d, color);
         event.renderer.line(x1d, y2d, z2d, x1d, y2d, z1d, color);
 
-        // Vertical edges
+
         event.renderer.line(x1d, y1d, z1d, x1d, y2d, z1d, color);
         event.renderer.line(x2d, y1d, z1d, x2d, y2d, z1d, color);
         event.renderer.line(x2d, y1d, z2d, x2d, y2d, z2d, color);
