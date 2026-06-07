@@ -1,6 +1,6 @@
 # DonutSMP Tools
 
-A Meteor addon for DonutSMP by critical.
+A Meteor addon for DonutSMP by critical, bighawtsauce on discord.
 
 ### How to use
 
